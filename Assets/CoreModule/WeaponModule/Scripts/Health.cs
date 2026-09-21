@@ -1,31 +1,50 @@
+using System;
 using UnityEngine;
-using UnityEngine.Events;
 
 public class Health : MonoBehaviour
 {
     [SerializeField] private float maxHealth = 100f;
-    public UnityEvent onDeath;
 
-    private float _currentHealth;
-    private bool _isDead;
+    public event Action<Vector3, Vector3> OnDeathWithForce;
+    public event Action OnDeath;
+
+    private float currentHealth;
+    private bool isDead = false;
+
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth => maxHealth;
+    public bool IsDead => isDead;
 
     private void Awake()
     {
-        _currentHealth = maxHealth;
+        currentHealth = maxHealth;
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float amount, Vector3 hitDirection = default, Vector3 hitPoint = default)
     {
-        if (_isDead) return;
+        if (isDead) return;
 
-        _currentHealth -= amount;
-        Debug.Log("HIT BY PLAYER, HEALTH =  " + _currentHealth);
-        if (_currentHealth <= 0f)
+        currentHealth -= amount;
+        currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+
+        if (currentHealth <= 0f)
         {
-            _currentHealth = 0f;
-            _isDead = true;
-            Debug.Log("EENEMY DIED FUCK!");
-            onDeath?.Invoke();
+            Die(hitDirection, hitPoint);
         }
+    }
+
+    private void Die(Vector3 hitDirection, Vector3 hitPoint)
+    {
+        if (isDead) return;
+        isDead = true;
+
+        OnDeath?.Invoke();
+        OnDeathWithForce?.Invoke(hitDirection, hitPoint);
+    }
+
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+        isDead = false;
     }
 }
